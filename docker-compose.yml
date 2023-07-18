@@ -1,0 +1,91 @@
+---
+version: '3.7'
+services:
+  ## MySQL Docker Compose Config
+  mysqldbuserservice:
+    container_name: mysqldbuserservice
+    image: mysql:8.0.33
+    restart: always
+    environment:
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: employee_db
+    networks:
+      bookmyappointment-net:
+    volumes:
+      - user-servicedbvalume:/var/lib/mysql
+
+  mysqldbdepartmentservice:
+    container_name: mysqldbdepartmentservice
+    image: mysql:8.0.33
+    restart: always
+    environment:
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: department_db
+    networks:
+      bookmyappointment-net:
+    volumes:
+      - department-servicedbvalume:/var/lib/mysql
+
+  ## Eureka Server
+  service-registry:
+    build:
+      context: ./
+      dockerfile: ../service-registry/Dockerfile
+    image: service-registry
+    container_name: service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      bookmyappointment-net:
+
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    ports:
+      - "8181:8080"
+    expose:
+      - "8181"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY= TRACE
+    depends_on:
+      - service-registry
+    networks:
+      bookmyappointment-net:
+
+  ## User-Service Docker Compose Config
+  user-service:
+    container_name: user-service
+    image: user-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mysqldbuserservice
+      - service-registry
+      - api-gateway
+    networks:
+      bookmyappointment-net:
+
+  ## Department-Service Docker Compose Config
+  department-service:
+    container_name: department-service
+    image: department-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - mysqldbdepartmentservice
+      - service-registry
+      - api-gateway
+    networks:
+      bookmyappointment-net:
+
+networks:
+  bookmyappointment-net:
+
+volumes:
+  user-servicedbvalume:
+  department-servicedbvalume:

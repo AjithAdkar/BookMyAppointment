@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+    <property name="HOME_LOG" value="logs/app.log"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d [%thread] %-5level %-50logger{40} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${HOME_LOG}</file>
+        <encoder>
+            <pattern>%d [%thread] %-5level %-50logger{40} - %msg%n</pattern>
+        </encoder>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${HOME_LOG}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>1MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="STASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+        <destination>localhost:4560</destination>
+        <!-- You can add multiple destination values -->
+        <!--        <destination>100.100.10.100:55525</destination>
+                <destination>100.100.10.101:55525</destination>       -->
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <version/> <!-- Logstash json format version, the @version field in the output-->
+                <mdc/> <!-- MDC variables on the Thread will be written as JSON fields-->
+                <context/> <!--Outputs entries from logback's context -->
+                <logLevel/>
+                <loggerName/>
+                <pattern> <!-- we can add some custom fields to be sent with all the log entries. make filtering easier in Logstash-->
+                    <pattern>
+                        {
+                        "appName": "example-project"
+                        }
+                    </pattern>
+                </pattern>
+                <threadName/>
+                <message/>
+                <logstashMarkers/> <!-- Useful so we can add extra information for specific log lines as Markers-->
+                <arguments/> <!--or through StructuredArguments-->
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="RollingFile" />
+    </root>
+
+    <logger name="com.aforv.userservice" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="RollingFile"/>
+    </logger>
+
+    <logger name="com.aforv.departmentservice" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="RollingFile"/>
+    </logger>
+</configuration>
